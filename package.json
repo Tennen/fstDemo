@@ -11,7 +11,9 @@
   },
   "dependencies": {
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "antd": "^5.x.x",
+    "@ant-design/icons": "^5.x.x"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.0",

@@ -1,58 +1,54 @@
-import React, { useState, useEffect } from 'react';
-import Viewer from 'some_doc_viewers';
-import 'some_doc_viewers/dist/index.css';
+import React, { useState } from 'react';
+import { Layout, Menu, theme } from 'antd';
+import { UploadOutlined, AppstoreOutlined } from '@ant-design/icons';
+import FileViewerDemo from './demos/FileViewerDemo';
 import './App.css';
 
+const { Header, Sider, Content } = Layout;
+
+interface Demo {
+  key: string;
+  label: string;
+  icon: React.ReactNode;
+  component: React.ComponentType;
+}
+
+const demos: Demo[] = [
+  {
+    key: 'fileViewer',
+    label: 'File Viewer',
+    icon: <UploadOutlined />,
+    component: FileViewerDemo,
+  },
+  // Add more demos here as needed
+];
+
 function App() {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [fileUrl, setFileUrl] = useState<string | null>(null);
-  const [fileType, setFileType] = useState<string | null>(null);
+  const [selectedDemo, setSelectedDemo] = useState<string>(demos[0].key);
+  const { token } = theme.useToken();
 
-  const handleFileUpload = (fileType: string) => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = `.${fileType}`;
-    input.onchange = (event) => {
-      const file = (event.target as HTMLInputElement).files?.[0];
-      if (file) {
-        setSelectedFile(file);
-        setFileType(fileType);
-        const url = URL.createObjectURL(file);
-        setFileUrl(url);
-        console.log(`Selected ${fileType.toUpperCase()} file:`, file.name);
-        console.log('File URL:', url);
-      }
-    };
-    input.click();
-  };
-
-  useEffect(() => {
-    // Clean up the object URL when the component unmounts or when a new file is selected
-    return () => {
-      if (fileUrl) {
-        URL.revokeObjectURL(fileUrl);
-      }
-    };
-  }, [fileUrl]);
+  const CurrentDemoComponent = demos.find(demo => demo.key === selectedDemo)?.component || demos[0].component;
 
   return (
-    <div className="App">
-      <h1>File Upload Buttons</h1>
-      <div className="button-container">
-        <button onClick={() => handleFileUpload('xlsx')}>Upload XLSX</button>
-        <button onClick={() => handleFileUpload('pptx')}>Upload PPTX</button>
-        <button onClick={() => handleFileUpload('pdf')}>Upload PDF</button>
-        <button onClick={() => handleFileUpload('docx')}>Upload DOCX</button>
-      </div>
-      {selectedFile && (
-        <div>
-          <p>Selected file: {selectedFile.name}</p>
-          {fileUrl && fileType && (
-            <Viewer fileUrl={fileUrl} fileType={fileType} />
-          )}
-        </div>
-      )}
-    </div>
+    <Layout style={{ minHeight: '100vh' }}>
+      <Sider theme="light" width={200}>
+        <Menu
+          mode="inline"
+          selectedKeys={[selectedDemo]}
+          items={demos.map(demo => ({
+            key: demo.key,
+            icon: demo.icon,
+            label: demo.label,
+          }))}
+          onClick={({ key }) => setSelectedDemo(key)}
+        />
+      </Sider>
+      <Layout>
+        <Content style={{ margin: '24px 16px', padding: 24, background: token.colorBgContainer }}>
+          <CurrentDemoComponent />
+        </Content>
+      </Layout>
+    </Layout>
   );
 }
 
