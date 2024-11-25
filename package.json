@@ -10,10 +10,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@ant-design/icons": "^5.x.x",
+    "@types/uuid": "^10.0.0",
+    "antd": "^5.x.x",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "antd": "^5.x.x",
-    "@ant-design/icons": "^5.x.x"
+    "some_doc_viewers": "^0.0.6",
+    "uuid": "^11.0.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.0",
