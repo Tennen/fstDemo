@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { 
   Button, 
   Card, 
@@ -18,7 +18,7 @@ import {
 } from '@ant-design/icons';
 import { v1, v4, v5, v3 } from 'uuid';
 
-const { Title, Paragraph, Text } = Typography;
+const { Title } = Typography;
 const { TextArea } = Input;
 const { TabPane } = Tabs;
 

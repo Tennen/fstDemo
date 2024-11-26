@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Button, Space, Typography, Card } from 'antd';
 import { FileTextOutlined, FilePdfOutlined, FileExcelOutlined, FileWordOutlined } from '@ant-design/icons';
 import Viewer from 'some_doc_viewers';
@@ -9,9 +9,9 @@ const { Title } = Typography;
 function FileViewerDemo() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileUrl, setFileUrl] = useState<string | null>(null);
-  const [fileType, setFileType] = useState<string | null>(null);
+  const [fileType, setFileType] = useState<'pdf' | 'xlsx' | 'docx' | 'pptx' | null>(null);
 
-  const handleFileUpload = (fileType: string) => {
+  const handleFileUpload = (fileType: 'pdf' | 'xlsx' | 'docx' | 'pptx') => {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = `.${fileType}`;
