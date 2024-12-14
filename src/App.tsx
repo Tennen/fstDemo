@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Layout, Menu, theme, Spin } from 'antd';
+import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
 import { loadMenuItems } from './utils/menuLoader';
 import './App.css';
 
@@ -9,12 +10,18 @@ interface MenuItem {
   key: string;
   label: string;
   component: React.ComponentType;
+  meta?: {
+    order?: number;
+    title?: string;
+    icon?: React.ComponentType;
+  };
 }
 
 function App() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [selectedKey, setSelectedKey] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [collapsed, setCollapsed] = useState(true);
   const { token } = theme.useToken();
 
   useEffect(() => {
@@ -39,16 +46,40 @@ function App() {
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Sider theme="light" width={200}>
+      <Sider 
+        theme="light" 
+        width={200} 
+        collapsible 
+        collapsed={collapsed}
+        onCollapse={setCollapsed}
+        trigger={null}
+      >
         <Menu
           mode="inline"
           selectedKeys={[selectedKey]}
-          items={menuItems.map(({ key, label }) => ({
+          items={menuItems.map(({ key, label, meta }) => ({
             key,
-            label,
+            label: collapsed ? '' : label,
+            icon: meta?.icon ? React.createElement(meta.icon) : null
           }))}
           onClick={({ key }) => setSelectedKey(key)}
         />
+        <div 
+          className="collapse-trigger"
+          onClick={() => setCollapsed(!collapsed)}
+          style={{
+            padding: '16px',
+            textAlign: 'center',
+            cursor: 'pointer',
+            borderTop: `1px solid ${token.colorBorderSecondary}`,
+            position: 'absolute',
+            bottom: 0,
+            width: '100%',
+            background: token.colorBgContainer,
+          }}
+        >
+          {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+        </div>
       </Sider>
       <Layout>
         <Content style={{ margin: '24px 16px', padding: 24, background: token.colorBgContainer }}>

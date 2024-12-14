@@ -7,3 +7,19 @@
   background: #fff;
   min-height: 360px;
 }
+
+/* 添加折叠按钮的悬停效果 */
+.collapse-trigger:hover {
+  background-color: rgba(0, 0, 0, 0.025);
+}
+
+/* 确保 Sider 的相对定位 */
+.ant-layout-sider {
+  position: relative;
+}
+
+/* 调整菜单最大高度，为底部折叠按钮留出空间 */
+.ant-layout-sider .ant-menu {
+  height: calc(100vh - 48px); /* 48px 是折叠按钮的高度 */
+  overflow-y: auto;
+}
