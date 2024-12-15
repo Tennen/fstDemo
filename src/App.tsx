@@ -59,7 +59,8 @@ function App() {
           selectedKeys={[selectedKey]}
           items={menuItems.map(({ key, label, meta }) => ({
             key,
-            label: collapsed ? '' : label,
+            label,
+            title: label,
             icon: meta?.icon ? React.createElement(meta.icon) : null
           }))}
           onClick={({ key }) => setSelectedKey(key)}
