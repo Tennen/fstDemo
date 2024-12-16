@@ -10,11 +10,14 @@ import {
   message, 
   Tabs,
   Select,
+  Upload,
 } from 'antd';
 import { 
   CopyOutlined, 
   ReloadOutlined, 
-  SwapOutlined 
+  SwapOutlined,
+  UploadOutlined,
+  FileImageOutlined,
 } from '@ant-design/icons';
 import { v1, v4, v5, v3 } from 'uuid';
 
@@ -91,6 +94,11 @@ function DevTools() {
   const [urlOutput, setUrlOutput] = useState<string>('');
   const [urlMode, setUrlMode] = useState<'encode' | 'decode'>('encode');
 
+  // Image to Base64 States
+  const [imageBase64, setImageBase64] = useState<string>('');
+  const [svgBase64, setSvgBase64] = useState<string>('');
+  const [pngDataUrl, setPngDataUrl] = useState<string>('');
+
   // UUID Functions
   const generateUuid = () => {
     const version = uuidVersions.find(v => v.version === selectedVersion);
@@ -139,6 +147,36 @@ function DevTools() {
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     message.success('Copied to clipboard!');
+  };
+
+  // Image to Base64 Functions
+  const handleImageToBase64 = (file: File) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      setImageBase64(reader.result as string);
+    };
+    return false; // 阻止自动上传
+  };
+
+  const handleSvgToPng = (file: File) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      const img = new Image();
+      img.src = reader.result as string;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0);
+          setPngDataUrl(canvas.toDataURL('image/png'));
+        }
+      };
+    };
+    return false; // 阻止自动上传
   };
 
   return (
@@ -304,6 +342,84 @@ function DevTools() {
                       onClick={() => copyToClipboard(urlOutput)}
                     >
                       Copy Result
+                    </Button>
+                  </Space>
+                </Card>
+              )}
+            </Space>
+          </Card>
+        </TabPane>
+
+        <TabPane tab="Image to Base64" key="image">
+          <Card>
+            <Space direction="vertical" size="large" style={{ width: '100%' }}>
+              <Upload.Dragger
+                accept="image/*"
+                beforeUpload={handleImageToBase64}
+                showUploadList={false}
+              >
+                <p className="ant-upload-drag-icon">
+                  <UploadOutlined />
+                </p>
+                <p className="ant-upload-text">Click or drag image to convert to Base64</p>
+              </Upload.Dragger>
+              {imageBase64 && (
+                <Card size="small">
+                  <Space direction="vertical" style={{ width: '100%' }}>
+                    <img 
+                      src={imageBase64} 
+                      alt="Preview" 
+                      style={{ maxWidth: '200px', maxHeight: '200px' }} 
+                    />
+                    <TextArea 
+                      rows={4} 
+                      value={imageBase64} 
+                      readOnly 
+                    />
+                    <Button 
+                      icon={<CopyOutlined />} 
+                      onClick={() => copyToClipboard(imageBase64)}
+                    >
+                      Copy Base64
+                    </Button>
+                  </Space>
+                </Card>
+              )}
+            </Space>
+          </Card>
+        </TabPane>
+
+        <TabPane tab="SVG to PNG" key="svg">
+          <Card>
+            <Space direction="vertical" size="large" style={{ width: '100%' }}>
+              <Upload.Dragger
+                accept=".svg"
+                beforeUpload={handleSvgToPng}
+                showUploadList={false}
+              >
+                <p className="ant-upload-drag-icon">
+                  <FileImageOutlined />
+                </p>
+                <p className="ant-upload-text">Click or drag SVG file to convert to PNG</p>
+              </Upload.Dragger>
+              {pngDataUrl && (
+                <Card size="small">
+                  <Space direction="vertical" style={{ width: '100%' }}>
+                    <img 
+                      src={pngDataUrl} 
+                      alt="PNG Preview" 
+                      style={{ maxWidth: '200px', maxHeight: '200px' }} 
+                    />
+                    <Button 
+                      type="primary"
+                      onClick={() => {
+                        const link = document.createElement('a');
+                        link.download = 'converted.png';
+                        link.href = pngDataUrl;
+                        link.click();
+                      }}
+                    >
+                      Download PNG
                     </Button>
                   </Space>
                 </Card>
