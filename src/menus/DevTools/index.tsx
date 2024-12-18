@@ -11,6 +11,9 @@ import {
   Tabs,
   Select,
   Upload,
+  Row,
+  Col,
+  Alert
 } from 'antd';
 import { 
   CopyOutlined, 
@@ -18,6 +21,7 @@ import {
   SwapOutlined,
   UploadOutlined,
   FileImageOutlined,
+  CloseOutlined,
 } from '@ant-design/icons';
 import { v1, v4, v5, v3 } from 'uuid';
 
@@ -95,9 +99,20 @@ function DevTools() {
   const [urlMode, setUrlMode] = useState<'encode' | 'decode'>('encode');
 
   // Image to Base64 States
-  const [imageBase64, setImageBase64] = useState<string>('');
-  const [svgBase64, setSvgBase64] = useState<string>('');
-  const [pngDataUrl, setPngDataUrl] = useState<string>('');
+  const [imageResults, setImageResults] = useState<Array<{
+    fileName: string;
+    base64: string;
+  }>>([]);
+
+  const [svgResults, setSvgResults] = useState<Array<{
+    fileName: string;
+    pngUrl: string;
+  }>>([]);
+
+  // Base64 to Image States
+  const [base64ToImageInput, setBase64ToImageInput] = useState<string>('');
+  const [base64ToImageResult, setBase64ToImageResult] = useState<string>('');
+  const [base64ToImageError, setBase64ToImageError] = useState<string>('');
 
   // UUID Functions
   const generateUuid = () => {
@@ -154,9 +169,12 @@ function DevTools() {
     const reader = new FileReader();
     reader.readAsDataURL(file);
     reader.onload = () => {
-      setImageBase64(reader.result as string);
+      setImageResults(prev => [...prev, {
+        fileName: file.name,
+        base64: reader.result as string
+      }]);
     };
-    return false; // 阻止自动上传
+    return false;
   };
 
   const handleSvgToPng = (file: File) => {
@@ -172,11 +190,30 @@ function DevTools() {
         const ctx = canvas.getContext('2d');
         if (ctx) {
           ctx.drawImage(img, 0, 0);
-          setPngDataUrl(canvas.toDataURL('image/png'));
+          setSvgResults(prev => [...prev, {
+            fileName: file.name,
+            pngUrl: canvas.toDataURL('image/png')
+          }]);
         }
       };
     };
-    return false; // 阻止自动上传
+    return false;
+  };
+
+  // Base64 to Image Functions
+  const handleBase64ToImage = () => {
+    try {
+      // 验证输入是否为有效的 Base64 图片字符串
+      if (!base64ToImageInput.startsWith('data:image/')) {
+        throw new Error('Invalid image Base64 string. It should start with "data:image/"');
+      }
+      
+      setBase64ToImageResult(base64ToImageInput);
+      setBase64ToImageError('');
+    } catch (error) {
+      setBase64ToImageError((error as Error).message);
+      setBase64ToImageResult('');
+    }
   };
 
   return (
@@ -357,34 +394,79 @@ function DevTools() {
                 accept="image/*"
                 beforeUpload={handleImageToBase64}
                 showUploadList={false}
+                multiple={true}
               >
                 <p className="ant-upload-drag-icon">
                   <UploadOutlined />
                 </p>
-                <p className="ant-upload-text">Click or drag image to convert to Base64</p>
+                <p className="ant-upload-text">Click or drag images to convert to Base64</p>
+                <p className="ant-upload-hint">Support for multiple images</p>
               </Upload.Dragger>
-              {imageBase64 && (
-                <Card size="small">
-                  <Space direction="vertical" style={{ width: '100%' }}>
-                    <img 
-                      src={imageBase64} 
-                      alt="Preview" 
-                      style={{ maxWidth: '200px', maxHeight: '200px' }} 
-                    />
-                    <TextArea 
-                      rows={4} 
-                      value={imageBase64} 
-                      readOnly 
-                    />
-                    <Button 
-                      icon={<CopyOutlined />} 
-                      onClick={() => copyToClipboard(imageBase64)}
-                    >
-                      Copy Base64
-                    </Button>
-                  </Space>
-                </Card>
+              
+              {imageResults.length > 0 && (
+                <Button 
+                  type="primary" 
+                  danger 
+                  onClick={() => setImageResults([])}
+                  style={{ marginBottom: 16 }}
+                >
+                  Clear All Results
+                </Button>
               )}
+
+              <Row gutter={[16, 16]}>
+                {imageResults.map((result, index) => (
+                  <Col xs={24} sm={12} md={8} lg={8} xl={6} key={index}>
+                    <Card 
+                      size="small"
+                      title={result.fileName}
+                      extra={
+                        <Button 
+                          type="text" 
+                          icon={<CloseOutlined />} 
+                          onClick={() => {
+                            setImageResults(prev => prev.filter((_, i) => i !== index));
+                          }}
+                        />
+                      }
+                    >
+                      <Space direction="vertical" style={{ width: '100%' }}>
+                        <div style={{ 
+                          height: '200px', 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'center',
+                          background: '#f5f5f5',
+                          borderRadius: '4px',
+                          padding: '8px'
+                        }}>
+                          <img 
+                            src={result.base64} 
+                            alt={`Preview ${index + 1}`} 
+                            style={{ 
+                              maxWidth: '100%', 
+                              maxHeight: '100%', 
+                              objectFit: 'contain' 
+                            }} 
+                          />
+                        </div>
+                        <TextArea 
+                          rows={3} 
+                          value={result.base64} 
+                          readOnly 
+                        />
+                        <Button 
+                          icon={<CopyOutlined />} 
+                          onClick={() => copyToClipboard(result.base64)}
+                          block
+                        >
+                          Copy Base64
+                        </Button>
+                      </Space>
+                    </Card>
+                  </Col>
+                ))}
+              </Row>
             </Space>
           </Card>
         </TabPane>
@@ -396,32 +478,171 @@ function DevTools() {
                 accept=".svg"
                 beforeUpload={handleSvgToPng}
                 showUploadList={false}
+                multiple={true}
               >
                 <p className="ant-upload-drag-icon">
                   <FileImageOutlined />
                 </p>
-                <p className="ant-upload-text">Click or drag SVG file to convert to PNG</p>
+                <p className="ant-upload-text">Click or drag SVG files to convert to PNG</p>
+                <p className="ant-upload-hint">Support for multiple SVG files</p>
               </Upload.Dragger>
-              {pngDataUrl && (
-                <Card size="small">
-                  <Space direction="vertical" style={{ width: '100%' }}>
-                    <img 
-                      src={pngDataUrl} 
-                      alt="PNG Preview" 
-                      style={{ maxWidth: '200px', maxHeight: '200px' }} 
-                    />
+
+              {svgResults.length > 0 && (
+                <Button 
+                  type="primary" 
+                  danger 
+                  onClick={() => setSvgResults([])}
+                  style={{ marginBottom: 16 }}
+                >
+                  Clear All Results
+                </Button>
+              )}
+
+              <Row gutter={[16, 16]}>
+                {svgResults.map((result, index) => (
+                  <Col xs={24} sm={12} md={8} lg={8} xl={6} key={index}>
+                    <Card 
+                      size="small"
+                      title={result.fileName}
+                      extra={
+                        <Button 
+                          type="text" 
+                          icon={<CloseOutlined />} 
+                          onClick={() => {
+                            setSvgResults(prev => prev.filter((_, i) => i !== index));
+                          }}
+                        />
+                      }
+                    >
+                      <Space direction="vertical" style={{ width: '100%' }}>
+                        <div style={{ 
+                          height: '200px', 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'center',
+                          background: '#f5f5f5',
+                          borderRadius: '4px',
+                          padding: '8px'
+                        }}>
+                          <img 
+                            src={result.pngUrl} 
+                            alt={`PNG Preview ${index + 1}`} 
+                            style={{ 
+                              maxWidth: '100%', 
+                              maxHeight: '100%', 
+                              objectFit: 'contain' 
+                            }} 
+                          />
+                        </div>
+                        <Space.Compact block>
+                          <Button 
+                            type="primary"
+                            style={{ width: '60%' }}
+                            onClick={() => {
+                              const link = document.createElement('a');
+                              link.download = `${result.fileName.replace('.svg', '')}.png`;
+                              link.href = result.pngUrl;
+                              link.click();
+                            }}
+                          >
+                            Download PNG
+                          </Button>
+                          <Button 
+                            icon={<CopyOutlined />}
+                            style={{ width: '40%' }}
+                            onClick={() => copyToClipboard(result.pngUrl)}
+                          >
+                            Copy URL
+                          </Button>
+                        </Space.Compact>
+                      </Space>
+                    </Card>
+                  </Col>
+                ))}
+              </Row>
+            </Space>
+          </Card>
+        </TabPane>
+
+        <TabPane tab="Base64 to Image" key="base64ToImage">
+          <Card>
+            <Space direction="vertical" size="large" style={{ width: '100%' }}>
+              <TextArea 
+                rows={6} 
+                value={base64ToImageInput}
+                onChange={(e) => {
+                  setBase64ToImageInput(e.target.value);
+                  setBase64ToImageError('');
+                  setBase64ToImageResult('');
+                }}
+                placeholder="Paste Base64 image string here..."
+                status={base64ToImageError ? 'error' : ''}
+              />
+              
+              {base64ToImageError && (
+                <Alert 
+                  message="Error" 
+                  description={base64ToImageError} 
+                  type="error" 
+                  showIcon 
+                />
+              )}
+
+              <Space>
+                <Button 
+                  type="primary"
+                  onClick={handleBase64ToImage}
+                  disabled={!base64ToImageInput}
+                >
+                  Convert to Image
+                </Button>
+                <Button 
+                  onClick={() => {
+                    setBase64ToImageInput('');
+                    setBase64ToImageResult('');
+                    setBase64ToImageError('');
+                  }}
+                  disabled={!base64ToImageInput}
+                >
+                  Clear
+                </Button>
+              </Space>
+
+              {base64ToImageResult && (
+                <Card 
+                  size="small"
+                  title="Result"
+                  extra={
                     <Button 
                       type="primary"
                       onClick={() => {
                         const link = document.createElement('a');
-                        link.download = 'converted.png';
-                        link.href = pngDataUrl;
+                        link.download = 'image.' + base64ToImageResult.split(';')[0].split('/')[1];
+                        link.href = base64ToImageResult;
                         link.click();
                       }}
                     >
-                      Download PNG
+                      Download Image
                     </Button>
-                  </Space>
+                  }
+                >
+                  <div style={{ 
+                    border: '1px solid #d9d9d9',
+                    borderRadius: '8px',
+                    padding: '16px',
+                    background: '#f5f5f5',
+                    textAlign: 'center'
+                  }}>
+                    <img 
+                      src={base64ToImageResult} 
+                      alt="Converted" 
+                      style={{ 
+                        maxWidth: '100%',
+                        maxHeight: '400px',
+                        objectFit: 'contain'
+                      }} 
+                    />
+                  </div>
                 </Card>
               )}
             </Space>
